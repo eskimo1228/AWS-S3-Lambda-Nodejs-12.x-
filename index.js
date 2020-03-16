@@ -37,22 +37,24 @@ exports.handler = async (event, context) => {
     try {
         console.time("downloadImage");
         console.log("download");
-        // Download the image from S3 into a buffer.
-        // sadly it downloads the image several times, but we couldn't place it outside
-        // the variable was not recognized
+        
         const image = await s3.getObject({ Bucket: srcBucket, Key: srcKey }).promise();
         console.timeEnd("downloadImage");
 
         console.time("convertImage");
         console.log("Reponse content type : " + image.ContentType);
         console.log("Conversion");
+
         const imageMetadata = await sharp(image.Body).metadata();
         var scalingFactor = Math.min(500 / imageMetadata.width, 500 / imageMetadata.height);
+
         console.log("scalingFactor : " + scalingFactor);
+        
         var width = scalingFactor * imageMetadata.width;
         var height = scalingFactor * imageMetadata.height;
         width = Math.round(width);
         height = Math.round(height);
+
         console.log("new width : " + width);
         console.log("new height : " + height);
 
@@ -65,7 +67,7 @@ exports.handler = async (event, context) => {
         // Stream the transformed image to a different folder.
         await s3.putObject({
             Bucket: dstBucket,
-            Key: "uploads/" + fileName.slice(0, -4) + ".jpg",
+            Key: srcKey.slice(0, -4) + ".jpg",//same directory with srcBucket directory
             Body: resizedImage,
             ContentType: 'JPG'
         }).promise();
